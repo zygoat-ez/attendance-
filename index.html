@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The 75% Ledger</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#8C6A3F">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="75% Ledger">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBF6EC;
+    --paper-shade:#F1E9D8;
+    --paper-shade-2:#EAE0C9;
+    --ink:#23281F;
+    --ink-faint:#6B6F5F;
+    --rule:#D9CFB6;
+    --brass:#8C6A3F;
+    --brass-dark:#6F5330;
+    --safe:#2E6B49; --safe-bg:#E3EEE2;
+    --warn:#A9721E; --warn-bg:#F3E4C8;
+    --danger:#A23A2C; --danger-bg:#F1DCD6;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .slab{font-family:'Zilla Slab',serif;}
+
+  .wrap{max-width:1040px;margin:0 auto;padding:0 20px 64px;}
+
+  /* Header band */
+  header.band{
+    background:linear-gradient(180deg,var(--brass) 0%, var(--brass-dark) 100%);
+    color:#F8F1E2;
+    padding:28px 20px 24px;
+    margin-bottom:28px;
+  }
+  header.band .inner{
+    max-width:1040px;margin:0 auto;
+    display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;
+  }
+  header.band h1{
+    font-family:'Zilla Slab',serif;
+    font-weight:700;
+    font-size:clamp(26px,4vw,34px);
+    margin:0 0 4px;
+    letter-spacing:0.2px;
+  }
+  header.band p.tagline{
+    margin:0;
+    font-size:14px;
+    color:#EADFC4;
+    max-width:46ch;
+  }
+  .agg-block{text-align:right;}
+  .agg-block .label{font-size:12px;color:#EADFC4;margin-bottom:2px;}
+  .agg-pct{
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:clamp(30px,5vw,42px);
+    line-height:1;
+  }
+  .agg-sub{font-size:12.5px;color:#EADFC4;margin-top:4px;}
+
+  /* Layout */
+  .layout{display:grid;grid-template-columns:1fr 320px;gap:28px;align-items:start;}
+  @media (max-width: 780px){ .layout{grid-template-columns:1fr;} }
+
+  .panel{
+    background:var(--paper-shade);
+    border:1px solid var(--rule);
+  }
+  .panel-head{
+    padding:14px 18px;
+    border-bottom:1px solid var(--rule);
+    display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
+  }
+  .panel-head h2{
+    font-family:'Zilla Slab',serif;
+    font-size:18px;font-weight:600;margin:0;
+  }
+
+  /* Ledger rows */
+  .row{
+    padding:16px 18px;
+    border-bottom:1px solid var(--rule);
+    display:grid;
+    grid-template-columns: 1.4fr 0.9fr auto;
+    gap:14px 18px;
+    align-items:start;
+  }
+  .row:last-child{border-bottom:none;}
+  @media (max-width:600px){ .row{grid-template-columns:1fr;} }
+
+  .row .name-col{display:flex;flex-direction:column;gap:6px;min-width:0;}
+  .subject-name{
+    background:transparent;border:none;
+    font-family:'Zilla Slab',serif;font-size:17px;font-weight:600;color:var(--ink);
+    padding:2px 0;border-bottom:1px dashed transparent;width:100%;
+  }
+  .subject-name:focus{outline:none;border-bottom:1px dashed var(--brass);}
+  .figures{
+    display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;
+    font-size:12.5px;color:var(--ink-faint);
+  }
+  .figures .num-edit{
+    display:inline-flex;align-items:center;gap:4px;
+  }
+  .figures input[type=number]{
+    width:44px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    border:1px solid var(--rule);
+    background:var(--paper);
+    color:var(--ink);
+    padding:2px 4px;
+    text-align:right;
+  }
+  .stamp-col{display:flex;flex-direction:column;align-items:flex-start;gap:6px;}
+  .pct-big{
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:24px;
+  }
+  .stamp{
+    font-family:'Zilla Slab',serif;
+    font-weight:700;
+    font-size:11px;
+    letter-spacing:0.4px;
+    padding:3px 9px;
+    border:1.5px solid currentColor;
+    transform:rotate(-2deg);
+    display:inline-block;
+    text-transform:uppercase;
+  }
+  .stamp.safe{color:var(--safe);background:var(--safe-bg);}
+  .stamp.warn{color:var(--warn);background:var(--warn-bg);}
+  .stamp.danger{color:var(--danger);background:var(--danger-bg);}
+
+  .actions-col{display:flex;flex-direction:column;gap:8px;align-items:flex-end;}
+  @media (max-width:600px){ .actions-col{align-items:flex-start;} }
+  .btn-row{display:flex;gap:8px;}
+  button{
+    font-family:'Inter',sans-serif;
+    cursor:pointer;
+    border:1px solid var(--rule);
+    background:var(--paper);
+    color:var(--ink);
+    padding:7px 12px;
+    font-size:13px;
+    font-weight:600;
+    transition:background .12s,color .12s,border-color .12s;
+  }
+  button:hover{background:var(--paper-shade-2);}
+  .btn-present{border-color:var(--safe);color:var(--safe);}
+  .btn-present:hover{background:var(--safe-bg);}
+  .btn-absent{border-color:var(--danger);color:var(--danger);}
+  .btn-absent:hover{background:var(--danger-bg);}
+  .btn-remove{
+    border:none;background:none;color:var(--ink-faint);
+    font-size:12px;text-decoration:underline;padding:2px 0;
+  }
+  .btn-remove:hover{color:var(--danger);background:none;}
+
+  .bunk-line{
+    font-size:12.5px;
+    color:var(--ink-faint);
+    margin-top:2px;
+  }
+  .bunk-line b{color:var(--ink);}
+
+  .period-line{
+    font-size:11.5px;color:var(--ink-faint);display:flex;gap:14px;flex-wrap:wrap;margin-top:4px;
+  }
+  .period-line .val{font-family:'JetBrains Mono',monospace;color:var(--ink);font-weight:600;}
+  .perweek-edit{display:flex;align-items:center;gap:4px;font-size:11.5px;color:var(--ink-faint);}
+  .perweek-edit input{
+    width:34px;font-family:'JetBrains Mono',monospace;font-size:12px;
+    border:1px solid var(--rule);background:var(--paper);padding:1px 3px;text-align:right;
+  }
+
+  /* Sidebar */
+  .side-stat{padding:16px 18px;border-bottom:1px solid var(--rule);}
+  .side-stat:last-of-type{border-bottom:none;}
+  .side-stat .label{font-size:12px;color:var(--ink-faint);margin-bottom:6px;}
+  .side-stat .big{
+    font-family:'JetBrains Mono',monospace;font-weight:700;font-size:30px;line-height:1;
+  }
+  .side-stat .cap{font-size:12.5px;color:var(--ink-faint);margin-top:6px;}
+  .side-stat.safe .big{color:var(--safe);}
+  .side-stat.warn .big{color:var(--warn);}
+  .side-stat.danger .big{color:var(--danger);}
+
+  .add-form{padding:16px 18px;display:flex;flex-direction:column;gap:10px;}
+  .add-form label{font-size:11.5px;color:var(--ink-faint);display:block;margin-bottom:3px;}
+  .add-form input[type=text],.add-form input[type=number]{
+    width:100%;
+    font-family:'Inter',sans-serif;
+    border:1px solid var(--rule);
+    background:var(--paper);
+    padding:7px 8px;
+    font-size:13.5px;
+    color:var(--ink);
+  }
+  .add-form .fields{display:flex;gap:10px;}
+  .add-form .fields > div:first-child{flex:2;}
+  .add-form .fields > div:last-child{flex:1;}
+  .add-form button{align-self:flex-start;background:var(--brass);color:#fff;border-color:var(--brass);}
+  .add-form button:hover{background:var(--brass-dark);border-color:var(--brass-dark);}
+
+  .empty{
+    padding:30px 18px;text-align:left;color:var(--ink-faint);font-size:14px;
+  }
+
+  footer.note{
+    max-width:1040px;margin:20px auto 0;padding:0 20px;
+    font-size:12px;color:var(--ink-faint);
+  }
+  .reset-link{
+    background:none;border:none;color:var(--ink-faint);text-decoration:underline;
+    font-size:12px;cursor:pointer;padding:0;
+  }
+  .reset-link:hover{color:var(--danger);}
+
+  .save-warning{
+    max-width:1040px;margin:0 auto 16px;padding:10px 14px;
+    background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn);
+    font-size:12.5px;display:none;
+  }
+</style>
+</head>
+<body>
+
+<header class="band">
+  <div class="inner">
+    <div>
+      <h1>The 75% Ledger</h1>
+      <p class="tagline">IPU marks you present or absent per class, not per day — so this tracks every class separately, then works out what the rulebook actually allows you to skip.</p>
+    </div>
+    <div class="agg-block">
+      <div class="label">Aggregate attendance</div>
+      <div class="agg-pct mono" id="aggPct">—</div>
+      <div class="agg-sub" id="aggSub">add a subject to begin</div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="save-warning" id="saveWarning">Changes aren't being saved right now — they'll only last for this session.</div>
+
+  <div class="layout">
+    <div class="panel" id="listPanel">
+      <div class="panel-head">
+        <h2>Classes</h2>
+        <button class="reset-link" id="resetBtn">Clear all data</button>
+      </div>
+      <div id="rows"><div class="empty">Loading your ledger…</div></div>
+    </div>
+
+    <div>
+      <div class="panel" style="margin-bottom:20px;">
+        <div class="panel-head"><h2>Bunk allowance</h2></div>
+        <div class="side-stat" id="weekStat">
+          <div class="label">This week</div>
+          <div class="big mono">—</div>
+          <div class="cap">across all classes combined</div>
+        </div>
+        <div class="side-stat" id="monthStat">
+          <div class="label">This month</div>
+          <div class="big mono">—</div>
+          <div class="cap">assumes 4 weeks, same weekly load</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Add a class</h2></div>
+        <div class="add-form">
+          <div class="fields">
+            <div>
+              <label for="newName">Subject name</label>
+              <input type="text" id="newName" placeholder="e.g. Data Structures" maxlength="40">
+            </div>
+            <div>
+              <label for="newPerWeek">Classes / week</label>
+              <input type="number" id="newPerWeek" min="0" max="30" value="5">
+            </div>
+          </div>
+          <button id="addBtn">Add class</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="note">
+    Held and attended counts are stored per subject. Use "Present" / "Absent" after each class, or edit the numbers directly if you're entering a semester already in progress. Figures assume the standard IPU 75% requirement.
+  </footer>
+</div>
+
+<script>
+(function(){
+  const THRESHOLD = 0.75;
+  const STORAGE_KEY = 'ipu-75-ledger-subjects-v1';
+  let subjects = [];
+  let storageWorking = true;
+
+  const rowsEl = document.getElementById('rows');
+  const aggPctEl = document.getElementById('aggPct');
+  const aggSubEl = document.getElementById('aggSub');
+  const weekStatEl = document.getElementById('weekStat');
+  const monthStatEl = document.getElementById('monthStat');
+  const saveWarningEl = document.getElementById('saveWarning');
+
+  function uid(){
+    return 'c_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36);
+  }
+
+  function pct(attended, held){
+    if (!held) return 0;
+    return (attended/held)*100;
+  }
+  function statusOf(p){
+    if (p >= 75) return 'safe';
+    if (p >= 65) return 'warn';
+    return 'danger';
+  }
+  function stampLabel(status){
+    if (status==='safe') return 'On track';
+    if (status==='warn') return 'Borderline';
+    return 'Below 75%';
+  }
+  // future classes that can be missed while staying >=75%, with no cap on how far ahead
+  function maxBunkable(attended, held){
+    if (!held) return 0;
+    return Math.max(0, Math.floor(attended/THRESHOLD - held));
+  }
+  // classes that must be attended in a row to climb back to 75%
+  function needToAttend(attended, held){
+    return Math.max(0, Math.ceil(3*held - 4*attended));
+  }
+  // within the next n scheduled classes, how many can be missed and still end >=75%
+  function maxMissInPeriod(attended, held, n){
+    if (n <= 0) return {miss:0, shortBy:0};
+    const raw = attended - THRESHOLD*held + (1-THRESHOLD)*n;
+    const miss = Math.min(n, Math.max(0, Math.floor(raw)));
+    const shortBy = raw < 0 ? Math.ceil(-raw) : 0; // even attending all n, still short by this many
+    return {miss, shortBy};
+  }
+
+  function loadSubjects(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      subjects = raw ? JSON.parse(raw) : [];
+      storageWorking = true;
+      saveWarningEl.style.display = 'none';
+    }catch(e){
+      subjects = [];
+      storageWorking = false;
+      saveWarningEl.style.display = 'block';
+    }
+    render();
+  }
+
+  function persist(){
+    render();
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(subjects));
+      storageWorking = true;
+      saveWarningEl.style.display = 'none';
+    }catch(e){
+      storageWorking = false;
+      saveWarningEl.style.display = 'block';
+    }
+  }
+
+  function addSubject(name, perWeek){
+    subjects.push({ id: uid(), name: name || ('Subject ' + (subjects.length+1)), held:0, attended:0, perWeek: perWeek || 0 });
+    persist();
+  }
+  function removeSubject(id){
+    subjects = subjects.filter(s => s.id !== id);
+    persist();
+  }
+  function mark(id, present){
+    const s = subjects.find(s=>s.id===id);
+    if (!s) return;
+    s.held += 1;
+    if (present) s.attended += 1;
+    persist();
+  }
+  function updateField(id, field, value){
+    const s = subjects.find(s=>s.id===id);
+    if (!s) return;
+    s[field] = value;
+    persist();
+  }
+
+  function fmtPct(p){ return p.toFixed(1) + '%'; }
+
+  function render(){
+    // rows
+    if (subjects.length === 0){
+      rowsEl.innerHTML = '<div class="empty">No classes yet. Add your first one on the right — most IPU students start with five.</div>';
+    } else {
+      rowsEl.innerHTML = subjects.map(s => {
+        const p = pct(s.attended, s.held);
+        const status = statusOf(p);
+        const weekly = maxMissInPeriod(s.attended, s.held, s.perWeek||0);
+        const monthly = maxMissInPeriod(s.attended, s.held, (s.perWeek||0)*4);
+        let bunkLine;
+        if (p >= 75){
+          const free = maxBunkable(s.attended, s.held);
+          bunkLine = free > 0
+            ? 'Can miss the next <b>' + free + '</b> class' + (free===1?'':'es') + ' and stay at 75%.'
+            : 'Exactly at 75% — missing one more drops you below.';
+        } else {
+          const need = needToAttend(s.attended, s.held);
+          bunkLine = need > 0
+            ? 'Attend the next <b>' + need + '</b> class' + (need===1?'':'es') + ' in a row to climb back to 75%.'
+            : 'Right at the edge — one more absence will drop you below.';
+        }
+        return '<div class="row" data-id="'+s.id+'">'
+          + '<div class="name-col">'
+            + '<input class="subject-name" value="'+escapeAttr(s.name)+'" data-action="name" />'
+            + '<div class="figures">'
+              + '<span class="num-edit">held <input type="number" min="0" value="'+s.held+'" data-action="held"></span>'
+              + '<span class="num-edit">attended <input type="number" min="0" value="'+s.attended+'" data-action="attended"></span>'
+            + '</div>'
+            + '<div class="perweek-edit">classes / week <input type="number" min="0" max="30" value="'+(s.perWeek||0)+'" data-action="perWeek"></div>'
+          + '</div>'
+          + '<div class="stamp-col">'
+            + '<div class="pct-big" style="color:var(--'+(status==='warn'?'warn':status)+')">'+fmtPct(p)+'</div>'
+            + '<div class="stamp '+status+'">'+stampLabel(status)+'</div>'
+            + '<div class="period-line">'
+              + '<span>Week: <span class="val">'+ (weekly.shortBy>0 ? ('short '+weekly.shortBy) : (weekly.miss+' free')) +'</span></span>'
+              + '<span>Month: <span class="val">'+ (monthly.shortBy>0 ? ('short '+monthly.shortBy) : (monthly.miss+' free')) +'</span></span>'
+            + '</div>'
+          + '</div>'
+          + '<div class="actions-col">'
+            + '<div class="btn-row">'
+              + '<button class="btn-present" data-action="present">Present</button>'
+              + '<button class="btn-absent" data-action="absent">Absent</button>'
+            + '</div>'
+            + '<div class="bunk-line">'+bunkLine+'</div>'
+            + '<button class="btn-remove" data-action="remove">Remove class</button>'
+          + '</div>'
+        + '</div>';
+      }).join('');
+    }
+
+    // aggregate
+    const totalHeld = subjects.reduce((a,s)=>a+s.held,0);
+    const totalAttended = subjects.reduce((a,s)=>a+s.attended,0);
+    const totalPerWeek = subjects.reduce((a,s)=>a+(s.perWeek||0),0);
+
+    if (subjects.length === 0 || totalHeld === 0){
+      aggPctEl.textContent = '—';
+      aggSubEl.textContent = subjects.length === 0 ? 'add a class to begin' : 'no classes logged yet';
+    } else {
+      const aggP = pct(totalAttended, totalHeld);
+      aggPctEl.textContent = fmtPct(aggP);
+      aggSubEl.textContent = totalAttended + ' attended of ' + totalHeld + ' held';
+    }
+
+    const weekAgg = maxMissInPeriod(totalAttended, totalHeld, totalPerWeek);
+    const monthAgg = maxMissInPeriod(totalAttended, totalHeld, totalPerWeek*4);
+    fillPeriodStat(weekStatEl, weekAgg, totalPerWeek, 'classes scheduled this week');
+    fillPeriodStat(monthStatEl, monthAgg, totalPerWeek*4, 'classes scheduled this month');
+  }
+
+  function fillPeriodStat(el, result, scheduled, capSuffix){
+    const bigEl = el.querySelector('.big');
+    const capEl = el.querySelector('.cap');
+    el.classList.remove('safe','warn','danger');
+    if (scheduled === 0){
+      bigEl.textContent = '—';
+      capEl.textContent = 'set "classes / week" per subject to calculate this';
+      return;
+    }
+    if (result.shortBy > 0){
+      bigEl.textContent = '0';
+      el.classList.add('danger');
+      capEl.textContent = 'attending all ' + scheduled + ' will not be enough — you will still be short by ' + result.shortBy;
+    } else {
+      bigEl.textContent = String(result.miss);
+      el.classList.add(result.miss === 0 ? 'warn' : 'safe');
+      capEl.textContent = 'free out of ' + scheduled + ' ' + capSuffix.replace('classes scheduled ', '');
+    }
+  }
+
+  function escapeAttr(str){
+    return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+  }
+
+  // event delegation
+  rowsEl.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const row = e.target.closest('.row');
+    if (!row) return;
+    const id = row.getAttribute('data-id');
+    const action = btn.getAttribute('data-action');
+    if (action === 'present') mark(id, true);
+    else if (action === 'absent') mark(id, false);
+    else if (action === 'remove') removeSubject(id);
+  });
+
+  rowsEl.addEventListener('change', (e)=>{
+    const input = e.target;
+    const row = e.target.closest('.row');
+    if (!row) return;
+    const id = row.getAttribute('data-id');
+    const action = input.getAttribute('data-action');
+    if (!action) return;
+    if (action === 'name'){
+      updateField(id, 'name', input.value.trim() || 'Untitled');
+    } else if (action === 'held' || action === 'attended' || action === 'perWeek'){
+      let v = parseInt(input.value, 10);
+      if (isNaN(v) || v < 0) v = 0;
+      updateField(id, action, v);
+    }
+  });
+
+  document.getElementById('addBtn').addEventListener('click', ()=>{
+    const nameInput = document.getElementById('newName');
+    const perWeekInput = document.getElementById('newPerWeek');
+    const name = nameInput.value.trim();
+    let perWeek = parseInt(perWeekInput.value, 10);
+    if (isNaN(perWeek) || perWeek < 0) perWeek = 0;
+    addSubject(name, perWeek);
+    nameInput.value = '';
+    perWeekInput.value = 5;
+    nameInput.focus();
+  });
+  document.getElementById('newName').addEventListener('keydown', (e)=>{
+    if (e.key === 'Enter') document.getElementById('addBtn').click();
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    if (confirm('Clear every class and start over? This cannot be undone.')){
+      subjects = [];
+      persist();
+    }
+  });
+
+  loadSubjects();
+
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')){
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => { /* offline caching unavailable, app still works */ });
+    });
+  }
+})();
+</script>
+
+</body>
+</html>
